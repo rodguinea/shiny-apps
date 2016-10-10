@@ -36,6 +36,12 @@ docker run --rm -p 3838:3838 yourname/yourappname
 ```
 and you're done!
 
+* You can run the image in detached mode (in the background) with:
+
+```sh
+docker run -d -p 3838:3838 yourname/yourappname
+```
+
 #### Entering the container (for debugging):
 
 ```sh
