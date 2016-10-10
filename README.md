@@ -1,7 +1,7 @@
 Dockerized Shiny App
 =======================
 
-This is the Dockerized Shiny App that runs on [thetech.com](http://thetech.com/3838).
+This is the Dockerized Shiny App that runs on [thetech.com](http://thetech.com:3838).
 
 This Dockerfile is based on Debian "testing" and r-base image.
 
