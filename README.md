@@ -45,8 +45,8 @@ docker run --rm -p 3838:3838 yourname/yourappname
 docker ps
 ```
 
-| CONTAINER ID    |    IMAGE                |     COMMAND         |         CREATED       |      STATUS    |          PORTS                                     |         NAMES
-| ---- | ----- | -------- | -------- | -------- | -------
+| CONTAINER ID    |    IMAGE  | COMMAND    |    CREATED       |   STATUS | PORTS    |   NAMES
+| ---- | ----- | -------- | -------- | -------- | ------- | ------
 | 8f67f0af8a8a    |    thetech/shiny-testing    | "/usr/bin/shiny-serve"  | 14 minutes ago  |    Up 14 minutes   |    0.0.0.0:3838->3838/tcp
 
 * Grab the container ID and run to pop a shell:
