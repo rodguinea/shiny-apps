@@ -7,22 +7,6 @@ This Dockerfile is based on Debian "testing" and r-base image.
 
 The image is forked from shiny-wordcloud on [Docker Hub](https://registry.hub.docker.com/u/flaviobarros/shiny-wordcloud/).
 
-## Usage:
-
-To run this Shiny App locally:
-
-```sh
-docker run --rm -p 80:3838 [name of docker image]
-```
-
-and it will be available at http://127.0.0.1/ or http://localhost
-
-You can run the container at other ports. It can happen that there is some service running at PORT 80, as Apache or Nginx.
-To run the app at PORT 3838 for example, you can use:
-
-```sh
-docker run --rm -p 3838:3838 [name of docker image]
-```
 
 ## Building a Shiny App:
 
@@ -33,7 +17,7 @@ place the files in a new folder `appname` in this repo, and add a line to `Docke
 COPY /appname/ /srv/shiny-server/appname/
 ```
 
-You must rebuild and rerun the docker image (see [Deployment](#deployment)). Then, you can access the app at `thetech.com:3838/appname`.
+You must build and run the docker image (see [Deployment](#deployment)). Then, you can access the app at `thetech.com:3838/appname`.
 
 
 ## <a name="deployment"></a> Deployment on The Tech website:
@@ -67,6 +51,25 @@ docker ps
 ```
 docker exec -it [container-id] bash
 ```
+
+
+## Local deploy:
+
+To run this Shiny App on your local machine:
+
+```sh
+docker run --rm -p 80:3838 [name of docker image]
+```
+
+and it will be available at http://127.0.0.1/ or http://localhost
+
+You can run the container at other ports. It can happen that there is some service running at PORT 80, as Apache or Nginx.
+To run the app at PORT 3838 for example, you can use:
+
+```sh
+docker run --rm -p 3838:3838 [name of docker image]
+```
+
 
 ## Deploy with a docker based PaaS
 
