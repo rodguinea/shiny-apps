@@ -22,7 +22,7 @@ You must build and run the docker image (see [Deployment](#deployment)). Then, y
 
 ## <a name="deployment"></a> Deployment on The Tech website:
 
-* Build a docker image on the tech server with :
+* Navigate to the repo on the tech server (I put it in root home), build a docker image on the tech server with :
 
 ```sh
 docker build -t yourname/yourappname .
