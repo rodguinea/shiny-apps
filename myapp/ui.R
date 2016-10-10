@@ -1,25 +1,24 @@
-fluidPage(
+library(shiny)
+
+# Define UI for application that draws a histogram
+shinyUI(fluidPage(
+
   # Application title
-  titlePanel("Word Cloud"),
-  
+  titlePanel("Hello Shiny!"),
+
+  # Sidebar with a slider input for the number of bins
   sidebarLayout(
-    # Sidebar with a slider and selection inputs
     sidebarPanel(
-      selectInput("selection", "Choose a book:",
-                  choices = books),
-      actionButton("update", "Change"),
-      hr(),
-      sliderInput("freq",
-                  "Minimum Frequency:",
-                  min = 1,  max = 50, value = 15),
-      sliderInput("max",
-                  "Maximum Number of Words:",
-                  min = 1,  max = 300,  value = 100)
+      sliderInput("bins",
+                  "Number of bins:",
+                  min = 1,
+                  max = 50,
+                  value = 30)
     ),
-    
-    # Show Word Cloud
+
+    # Show a plot of the generated distribution
     mainPanel(
-      plotOutput("plot")
+      plotOutput("distPlot")
     )
   )
-)
+))
