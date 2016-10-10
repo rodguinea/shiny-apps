@@ -24,6 +24,18 @@ To run the app at PORT 3838 for example, you can use:
 docker run --rm -p 3838:3838 [name of docker image]
 ```
 
+## Building a Shiny App:
+
+After developing your Shiny App, you will need two files for deployment: ui.R and server.R. Then
+place the files in a new folder `appname` in this repo, and add a line to `Dockerfile` like
+
+```
+COPY /appname/ /srv/shiny-server/appname/
+```
+
+You must rebuild and rerun the docker image (see [Deployment](#deployment)). Then, you can access the app at `thetech.com:3838/appname`.
+
+
 ## <a name="deployment"></a> Deployment on The Tech website:
 
 * Build a docker image on the tech server with :
@@ -38,6 +50,7 @@ docker build -t yourname/yourappname .
 ```sh
 docker run --rm -p 3838:3838 yourname/yourappname
 ```
+and you're done!
 
 #### Entering the container (for debugging):
 
@@ -54,18 +67,6 @@ docker ps
 ```
 docker exec -it [container-id] bash
 ```
-
-
-## Building a Shiny App:
-
-After developing your Shiny App, you will need two files for deployment: ui.R and server.R. Then
-place the files in a new folder `appname` in this repo, and add a line to `Dockerfile` like
-
-```
-COPY /appname/ /srv/shiny-server/appname/
-```
-
-You must rebuild and rerun the docker image (see [Deployment](#deployment)). Then, you can access the app at `thetech.com:3838/appname`.
 
 ## Deploy with a docker based PaaS
 
