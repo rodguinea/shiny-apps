@@ -19,7 +19,15 @@ RUN wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubu
     gdebi -n ss-latest.deb && \
     rm -f version.txt ss-latest.deb
 
-RUN R -e "install.packages(c('shiny', 'rmarkdown'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('shiny'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('rmarkdown'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('flexdashboard'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('dplyr'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('ggplot2'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('tidyr'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('reshape2'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('plotly'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('DT'), repos='http://cran.rstudio.com/')"
 
 COPY /myapp/ /srv/shiny-server/myapp/
 COPY /tech-drug-survey/ /srv/shiny-server/drug-survey/
