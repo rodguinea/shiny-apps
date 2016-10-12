@@ -1,0 +1,325 @@
+---
+title: "Alcohol and Drug usage @MIT"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    social: [facebook, twitter, "menu"]
+    theme: journal
+    favicon: favicon.ico
+    logo: logo.png
+runtime: shiny
+---
+
+```{r setup, include = F}
+library(flexdashboard)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(reshape2)
+library(plotly)
+library(DT)
+
+source("helpers.R")
+
+debug <- T
+```
+
+```{r, include=F}
+if(file.exists("ugrad-nice.Rdata") & !debug){
+  load("ugrad-nice.Rdata")
+} else {
+  pg1.raw <- read.csv("RESP_P1.csv")
+  pg2.raw <- read.csv("RESP_P2.csv")
+  pg3.raw <- read.csv("RESP_P3.csv")
+  pgd.raw <- read.csv("RESP_PD.csv")
+  qs.raw <- read.csv("Techsurvey.csv")
+  
+  pg1.melted <- pg1.raw %>% select(-timestamp, -resp) %>%
+    melt(id.vars = "response_token", variable.name = "q.num", value.name = "answer")
+  pg2.melted <- pg2.raw %>% select(-timestamp, -resp) %>%
+    melt(id.vars = "response_token", variable.name = "q.num", value.name = "answer")
+  pg3.melted <- pg3.raw %>% select(-timestamp, -resp) %>%
+    melt(id.vars = "response_token", variable.name = "q.num", value.name = "answer")
+  
+  pd.clean <- pgd.raw %>%
+    rename(class_year = pdq1, sem_num = pdq2, gender= pdq3, res=pdq4,greek = pdq5,hs=pdq6,age = pdq7, ugrad =pdq8)
+  
+  all.metled <- bind_rows(pg1.melted, pg2.melted, pg3.melted)
+  
+  all.clean <- all.metled %>%
+    mutate(answer = ifelse(answer == "NANS", NA, answer)) %>%
+    left_join(qs.raw, by = c("q.num" = "q.number")) %>%
+    left_join(pd.clean)
+  
+#   all.clean2 <- all.clean %>%
+#     group_by(ugrad)%>%
+#     mutate(n_st_level = n_distinct(response_token))%>%
+#     filter(n_st_level >10)
+#   
+#   ugrad1 <- all.clean %>%
+#     filter(res != "NANS", res != "grad_dorm", greek != "NANS")
+  
+  greek <-levels(all.clean$greek)
+  greek_nice <-c("Frat","Declined","Not Affiliated","Sorority")
+  greek_merge <- data.frame("greek"=greek, "greek_pretty" = greek_nice)
+  ugrad <- left_join(all.clean, greek_merge)
+  
+  res <- levels(ugrad$res)
+  res_nice <- c("Baker", "BC", "EC", "Frat", "Grad", "ILG", "MacG", "Maseeh", "McCormick", "Declined", "NH", "Next", "Off Campus", "Other", "Random", "SH", "Simmons", "Sorority")
+  res_merge <- data.frame("res" = res, "res_pretty" = res_nice)
+  ugrad_nice <- left_join(ugrad, res_merge)
+  
+  ugrad_nice$res_pretty <- factor(ugrad_nice$res_pretty, levels =c("Baker", "BC", "MacG", "Maseeh", "McCormick", "NH", "Next","Simmons", "EC","Random", "SH","ILG", "Sorority", "Frat", "Grad","Off Campus", "Other","Declined"))
+  
+  ugrad_nice$greek_pretty <-factor(ugrad_nice$greek_pretty, levels = c("Frat","Sorority","Not Affiliated","Declined"))
+  
+  save(ugrad_nice, file = "ugrad-nice.Rdata")
+}
+```
+
+
+#Sidebar {.sidebar}
+
+###Breakdown by...
+```{r}
+checkboxInput("brk_res", label = "Residence")
+checkboxInput("brk_gender", label = "Gender")
+checkboxInput("brk_year", label = "Class Year")
+checkboxInput("brk_greek", label = "Affiliation")
+```
+
+###Select only...
+```{r}
+###TODO make sure that a single category never gets through, the diff is often enough to get some info
+selectInput("sel_res", label = "Residence",
+            choices = c("All", levels(ugrad_nice$res_pretty)), selected = "All")
+selectInput("sel_gender", label = "Gender",
+            choices = c("All", levels(ugrad_nice$gender)), selected = "All")
+selectInput("sel_year", label = "Class Year",
+            choices = c("All", levels(ugrad_nice$class_year)), selected = "All")
+selectInput("sel_greek", label = "Affiliation",
+            choices = c("All", levels(ugrad_nice$greek_pretty)), selected = "All")
+```
+
+#Frequency
+
+##Col {.tabset}
+
+###Frequency of various substances
+```{r freq-proc, include = F}
+frequencies <- c("Never",
+                 "Not in year",
+                 "In past year",
+                 "Monthly+",
+                 "Weekly+",
+                 "Daily+")
+simplify_freq <- function(ever, str) {
+  simpler <- ifelse(ever == "no",
+                    "Never",
+                    ifelse(str == "not_past_12",
+                           "Not in year",
+                           ifelse(str %in% c("1_5_total", "5_10_total"),
+                                  "In past year",
+                                  ifelse(str %in% c("1_per_month", "1_per_2_weeks"),
+                                         "Monthly+",
+                                         ifelse(str %in% c("1_per_week", "2_5_per_week"),
+                                                "Weekly+",
+                                                "Daily+")))))
+  return(ordered(simpler, levels = frequencies))
+}
+
+if(file.exists("substance-freq.Rdata") & !debug) {
+  load("substance-freq.Rdata")
+} else {
+  #Tobacco
+  tbc_ever <- ugrad_nice %>%
+    filter(q.num == "p1q7") %>%
+    transmute(tbc_ever = answer,
+              response_token = response_token)
+  
+  tbc_freq <- ugrad_nice %>%
+    filter(q.num == "p1q7b") %>%
+    right_join(tbc_ever, by = "response_token") %>%
+    mutate(tbc_freq = simplify_freq(tbc_ever, answer))
+  
+  
+  #Alcohol
+  alc_ever <- ugrad_nice %>%
+    filter(q.num == "p1q27") %>%
+    transmute(alc_ever = answer,
+              response_token = response_token)
+  
+  alc_freq <- ugrad_nice %>%
+    filter(q.num == "p1q27b") %>%
+    right_join(alc_ever, by = "response_token") %>%
+    mutate(alc_freq = simplify_freq(alc_ever, answer))
+  
+  
+  #Marijuana
+  mj_ever <- ugrad_nice %>%
+    filter(q.num == "p1q38") %>%
+    transmute(mj_ever = answer,
+              response_token = response_token)
+  
+  mj_freq <- ugrad_nice %>%
+    filter(q.num == "p1q38a") %>%
+    right_join(mj_ever, by = "response_token") %>%
+    mutate(mj_freq = simplify_freq(mj_ever, answer))
+  
+  substance_freq <- left_join(tbc_freq, alc_freq, by = "response_token") %>%
+    left_join(mj_freq, by = "response_token") %>%
+    melt(measure.vars = c("tbc_freq", "alc_freq", "mj_freq"),
+         value.name = "freq",
+         variable.name = "substance")
+  save(substance_freq, file = "substance-freq.Rdata")
+}
+```
+
+```{r freq-plot}
+freq_proc <- function(data, usr_groups,
+                      ress = "All", genders = "All", years = "All", greeks = "All",
+                      small = 10) {
+  groups <- c(usr_groups, "substance", "freq")
+  
+  if (ress == "All") { ress <- levels(data$res_pretty)}
+  if (genders == "All") { genders <- levels(data$gender)}
+  if (years == "All") { years <- levels(data$class_year)}
+  if (greeks == "All") { greeks <- levels(data$greek_pretty)}
+
+  #All freq
+  plot_data <- usr_filter_group(data, groups, ress, genders, years, greeks, small) %>%
+    mutate(freq = ordered(freq, levels = frequencies),
+           substance = c("alc_freq" = "Alcohol",
+                         "tbc_freq" = "Tobacco",
+                         "mj_freq" = "Marijuana")[as.character(substance)],
+           substance = ordered(substance,
+                               levels = c("Alcohol", "Tobacco", "Marijuana")))
+
+  return(plot_data)
+}
+
+renderPlotly({
+  usr_groups <- c("res_pretty", "gender", "class_year", "greek")[c(input$brk_res,
+                           input$brk_gender,
+                           input$brk_year,
+                           input$brk_greek)]
+  plot_data <- freq_proc(substance_freq, usr_groups,
+                         input$sel_res, input$sel_gender, input$sel_year, input$sel_greek)
+  
+  #TODO figure out what's happening with the NAs
+  g <- ggplot(plot_data, aes(x = freq,
+                             y = count,
+                             fill = substance,
+                             group = substance)) +
+    geom_bar(position = "dodge", stat = "identity") +
+    geom_text(aes(label = paste0(frac, "%")), position = position_dodge(width = 1)) +
+    scale_fill_manual(values = c("cyan3", "tan3", "green4"),
+                      name = "Substance") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  if(length(usr_groups) > 0) {
+    g <- g + facet_wrap(usr_groups)
+  }
+  
+  p <- ggplotly(g, tooltip = c("y", "fill")) %>% layout(show_legend = F)
+  p
+})
+```
+
+###Data
+```{r freq-data}
+DT::renderDataTable({
+  usr_groups <- c("res_pretty", "gender", "class_year", "greek")[c(input$brk_res,
+                           input$brk_gender,
+                           input$brk_year,
+                           input$brk_greek)]
+  plot_data <- freq_proc(substance_freq, usr_groups)
+  datatable(plot_data, rownames = F,
+            extensions = c('Buttons', 'FixedHeader'), options = list(
+              dom = 'Bfrtilp',
+              buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+              fixedHeader = T
+            ))
+})
+```
+
+#Perception
+
+##Col {.tabset}
+
+###Perception of substance use
+```{r perception-proc, include = F}
+if(file.exists("perception.Rdata") & !debug) {
+  load("perception.Rdata")
+} else {
+ 
+  #Marijuana
+  mj_ever <- ugrad_nice %>%
+    filter(q.num == "p1q38") %>%
+    transmute(mj_ever = answer,
+              response_token = response_token)
+  
+  mj_freq <- ugrad_nice %>%
+    filter(q.num == "p1q38a") %>%
+    right_join(mj_ever, by = "response_token") %>%
+    mutate(mj_freq = simplify_freq(mj_ever, answer))
+  
+  substance_freq <- left_join(tbc_freq, alc_freq, by = "response_token") %>%
+    left_join(mj_freq, by = "response_token") %>%
+    melt(measure.vars = c("tbc_freq", "alc_freq", "mj_freq"),
+         value.name = "freq",
+         variable.name = "substance")
+  
+  save(substance_freq, file = "perception.Rdata")
+}
+```
+
+```{r perception-plot}
+renderPlotly({
+  usr_groups <- c("res_pretty", "gender", "class_year", "greek")[c(input$brk_res,
+                           input$brk_gender,
+                           input$brk_year,
+                           input$brk_greek)]
+  plot_data <- usr_filter_group(substance_freq, usr_groups)
+  
+  #TODO figure out what's happening with the NAs
+  g <- ggplot(plot_data, aes(x = freq,
+                             y = count,
+                             fill = substance,
+                             group = substance)) +
+    geom_bar(position = "dodge", stat = "identity") +
+    geom_text(aes(label = paste0(frac, "%")), position = position_dodge(width = 1)) +
+    scale_fill_manual(values = c("cyan3", "tan3", "green4"),
+                      name = "Substance") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  if(length(usr_groups) > 0) {
+    g <- g + facet_wrap(usr_groups)
+  }
+  
+  p <- ggplotly(g, tooltip = c("y", "fill")) %>% layout(show_legend = F)
+  p
+})
+```
+
+###Data
+```{r perception-data}
+DT::renderDataTable({
+  usr_groups <- c("res_pretty", "gender", "class_year", "greek")[c(input$brk_res,
+                           input$brk_gender,
+                           input$brk_year,
+                           input$brk_greek)]
+  plot_data <- usr_filter_group(substance_freq, usr_groups)
+  datatable(plot_data, rownames = F,
+            extensions = c('Buttons', 'FixedHeader'), options = list(
+              dom = 'Bfrtilp',
+              buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+              fixedHeader = T
+            ))
+})
+```
