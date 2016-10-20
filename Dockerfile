@@ -29,8 +29,7 @@ RUN R -e "install.packages(c('reshape2'), repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages(c('plotly'), repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages(c('DT'), repos='http://cran.rstudio.com/')"
 
-COPY /myapp/ /srv/shiny-server/myapp/
-COPY /tech-drug-survey/ /srv/shiny-server/drug-survey/
+COPY / /srv/shiny-server/drug-survey/
 
 EXPOSE 3838
 
