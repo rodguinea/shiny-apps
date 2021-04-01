@@ -28,6 +28,7 @@ RUN R -e "install.packages(c('tidyr'), repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages(c('reshape2'), repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages(c('plotly'), repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages(c('DT'), repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages(c('data.table'), repos='http://cran.rstudio.com/')"
 
 COPY / /srv/shiny-server/drug-survey/
 
@@ -36,3 +37,5 @@ EXPOSE 3838
 COPY shiny-server.sh /usr/bin/shiny-server.sh
 
 CMD ["/usr/bin/shiny-server.sh"]
+
+COPY /david_api/ /srv/shiny-server/david_api/
